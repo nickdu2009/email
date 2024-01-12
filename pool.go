@@ -205,7 +205,20 @@ func addAuth(c *client, auth smtp.Auth) (bool, error) {
 }
 
 func (p *Pool) build() (*client, error) {
-	cl, err := smtp.Dial(p.addr)
+	host, _, err := net.SplitHostPort(p.addr)
+	if err != nil {
+		return nil, err
+	}
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+		ServerName:         host,
+	}
+
+	conn, err := tls.Dial("tcp", p.addr, tlsConfig)
+	if err != nil {
+		return nil, err
+	}
+	cl, err := smtp.NewClient(conn, host)
 	if err != nil {
 		return nil, err
 	}
@@ -216,11 +229,6 @@ func (p *Pool) build() (*client, error) {
 	}
 
 	c := &client{cl, 0}
-
-	if _, err := startTLS(c, p.tlsConfig); err != nil {
-		c.Close()
-		return nil, err
-	}
 
 	if p.auth != nil {
 		if _, err := addAuth(c, p.auth); err != nil {
