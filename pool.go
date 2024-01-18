@@ -209,12 +209,8 @@ func (p *Pool) build() (*client, error) {
 	if err != nil {
 		return nil, err
 	}
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true,
-		ServerName:         host,
-	}
 
-	conn, err := tls.Dial("tcp", p.addr, tlsConfig)
+	conn, err := tls.Dial("tcp", p.addr, p.tlsConfig)
 	if err != nil {
 		return nil, err
 	}
